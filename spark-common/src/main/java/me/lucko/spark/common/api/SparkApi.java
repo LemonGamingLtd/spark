@@ -24,7 +24,10 @@ import com.google.common.collect.ImmutableMap;
 import me.lucko.spark.api.Spark;
 import me.lucko.spark.api.SparkProvider;
 import me.lucko.spark.api.gc.GarbageCollector;
+import me.lucko.spark.api.health.SparkHealth;
+import me.lucko.spark.api.heap.SparkHeap;
 import me.lucko.spark.api.placeholder.PlaceholderResolver;
+import me.lucko.spark.api.profiler.SparkProfiler;
 import me.lucko.spark.api.statistic.misc.DoubleAverageInfo;
 import me.lucko.spark.api.statistic.types.DoubleStatistic;
 import me.lucko.spark.api.statistic.types.GenericStatistic;
@@ -57,9 +60,15 @@ public class SparkApi implements Spark {
     }
 
     private final SparkPlatform platform;
+    private final SparkProfiler profiler;
+    private final SparkHealth health;
+    private final SparkHeap heap;
 
     public SparkApi(SparkPlatform platform) {
         this.platform = platform;
+        this.profiler = new SparkProfilerImpl(platform);
+        this.health = new SparkHealthImpl(platform);
+        this.heap = new SparkHeapImpl(platform);
     }
 
     @Override
@@ -187,6 +196,26 @@ public class SparkApi implements Spark {
                 return SparkPlaceholder.resolveComponentJson(SparkApi.this.platform, placeholder);
             }
         };
+    }
+
+    @Override
+    public @NonNull SparkProfiler profiler() {
+        return this.profiler;
+    }
+
+    @Override
+    public @NonNull SparkHealth health() {
+        return this.health;
+    }
+
+    @Override
+    public @NonNull SparkHeap heap() {
+        return this.heap;
+    }
+
+    @Override
+    public @NonNull String viewerUrl() {
+        return this.platform.getViewerUrl();
     }
 
     public static void register(Spark spark) {

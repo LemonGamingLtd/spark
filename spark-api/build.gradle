@@ -2,8 +2,6 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.1-SNAPSHOT'
-
 dependencies {
     compileOnly 'org.jspecify:jspecify:1.0.0'
 }
@@ -18,18 +16,24 @@ java {
 }
 
 publishing {
-    //repositories {
-    //    maven {
-    //        url = 'https://nexus.lucko.me/repository/maven-snapshots/'
-    //        credentials {
-    //            username = luckoNexusUsername
-    //            password = luckoNexusPassword
-    //        }
-    //    }
-    //}
+    repositories {
+        maven {
+            name = 'lgNexus'
+            url = project.version.toString().endsWith('SNAPSHOT')
+                    ? "https://repo.lemongaming.ltd/repository/maven-snapshots/"
+                    : "https://repo.lemongaming.ltd/repository/maven-releases/"
+            credentials {
+                username = findProperty("lgNexusUser") ?: ""
+                password = findProperty("lgNexusPass") ?: ""
+            }
+        }
+    }
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            groupId = 'ltd.lemongaming.spark'
+            artifactId = 'spark-api'
+            version = project.version
             pom {
                 name = 'spark'
                 description = 'spark is a performance profiling plugin/mod for Minecraft clients, servers and proxies.'

@@ -90,19 +90,24 @@ test {
 }
 
 publishing {
-    //repositories {
-    //    maven {
-    //        url = 'https://nexus.lucko.me/repository/maven-snapshots/'
-    //        credentials {
-    //            username = luckoNexusUsername
-    //            password = luckoNexusPassword
-    //        }
-    //    }
-    //}
+    repositories {
+        maven {
+            name = 'lgNexus'
+            url = project.version.toString().endsWith('SNAPSHOT')
+                    ? "https://repo.lemongaming.ltd/repository/maven-snapshots/"
+                    : "https://repo.lemongaming.ltd/repository/maven-releases/"
+            credentials {
+                username = findProperty("lgNexusUser") ?: ""
+                password = findProperty("lgNexusPass") ?: ""
+            }
+        }
+    }
     publications {
-        maven(MavenPublication) {
+        mavenJava(MavenPublication) {
             from components.java
-            version = "${project.pluginVersion}-SNAPSHOT"
+            groupId = 'ltd.lemongaming.spark'
+            artifactId = 'spark-common'
+            version = project.version
         }
     }
 }

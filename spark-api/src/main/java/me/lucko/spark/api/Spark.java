@@ -26,7 +26,10 @@
 package me.lucko.spark.api;
 
 import me.lucko.spark.api.gc.GarbageCollector;
+import me.lucko.spark.api.health.SparkHealth;
+import me.lucko.spark.api.heap.SparkHeap;
 import me.lucko.spark.api.placeholder.PlaceholderResolver;
+import me.lucko.spark.api.profiler.SparkProfiler;
 import me.lucko.spark.api.statistic.misc.DoubleAverageInfo;
 import me.lucko.spark.api.statistic.types.DoubleStatistic;
 import me.lucko.spark.api.statistic.types.GenericStatistic;
@@ -90,5 +93,33 @@ public interface Spark {
      */
     @NonNull
     PlaceholderResolver placeholders();
+
+    /**
+     * Gets the profiler API for programmatic control of Spark's profiler.
+     *
+     * @return the profiler API
+     */
+    @NonNull SparkProfiler profiler();
+
+    /**
+     * Gets the health API for programmatic access to health reports.
+     *
+     * @return the health API
+     */
+    @NonNull SparkHealth health();
+
+    /**
+     * Gets the heap API for programmatic access to heap analysis.
+     *
+     * @return the heap API
+     */
+    @NonNull SparkHeap heap();
+
+    /**
+     * Gets the viewer URL used by this spark instance.
+     *
+     * @return the viewer URL
+     */
+    @NonNull String viewerUrl();
 
 }
