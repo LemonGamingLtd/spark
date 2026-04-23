@@ -218,6 +218,9 @@ public class AsyncSampler extends AbstractSampler {
         super.stop(cancelled);
 
         synchronized (this.currentJobMutex) {
+            if (this.currentJob == null) {
+                return;
+            }
             this.currentJob.stop();
             if (!cancelled) {
                 this.windowStatisticsCollector.measureNow(this.currentJob.getWindow());

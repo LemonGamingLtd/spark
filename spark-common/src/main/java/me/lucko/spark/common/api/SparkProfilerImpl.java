@@ -166,7 +166,12 @@ public final class SparkProfilerImpl implements SparkProfiler {
             }
 
             this.platform.getSamplerContainer().unsetActiveSampler(sampler);
-            sampler.stop(false);
+
+            try {
+                sampler.stop(false);
+            } catch (Exception e) {
+                this.platform.getPlugin().log(java.util.logging.Level.WARNING, "Note: sampler stop returned an error (may have already completed): " + e.getMessage());
+            }
 
             Sampler.ExportProps exportProps = new Sampler.ExportProps()
                     .comment(comment)
