@@ -10,7 +10,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 allprojects {
     group = 'me.lucko'
-    version = '1.10.1-SNAPSHOT'
+    version = '1.10.2-SNAPSHOT'
 }
 
 subprojects {
