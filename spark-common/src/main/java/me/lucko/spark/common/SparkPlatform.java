@@ -26,8 +26,11 @@ import me.lucko.spark.common.activitylog.ActivityLog;
 import me.lucko.spark.common.api.SparkApi;
 import me.lucko.spark.common.command.CommandManager;
 import me.lucko.spark.common.command.sender.CommandSender;
+import me.lucko.spark.common.metric.Metrics;
 import me.lucko.spark.common.monitor.cpu.CpuMonitor;
 import me.lucko.spark.common.monitor.memory.GarbageCollectorStatistics;
+import me.lucko.spark.common.monitor.memory.MemoryAllocationInfo;
+import me.lucko.spark.common.monitor.memory.MemoryMonitor;
 import me.lucko.spark.common.monitor.net.NetworkMonitor;
 import me.lucko.spark.common.monitor.ping.PingStatistics;
 import me.lucko.spark.common.monitor.ping.PlayerPingProvider;
@@ -35,6 +38,7 @@ import me.lucko.spark.common.monitor.tick.SparkTickStatistics;
 import me.lucko.spark.common.monitor.tick.TickStatistics;
 import me.lucko.spark.common.platform.PlatformInfo;
 import me.lucko.spark.common.platform.PlatformStatisticsProvider;
+import me.lucko.spark.common.platform.WorldMetricsCollector;
 import me.lucko.spark.common.sampler.BackgroundSamplerManager;
 import me.lucko.spark.common.sampler.SamplerContainer;
 import me.lucko.spark.common.sampler.source.ClassSourceLookup;
@@ -76,6 +80,7 @@ public class SparkPlatform {
     private final BytesocksClient bytesocksClient;
     private final TrustedKeyStore trustedKeyStore;
     private final ActivityLog activityLog;
+    private final Metrics metrics;
     private final SamplerContainer samplerContainer;
     private final BackgroundSamplerManager backgroundSamplerManager;
     private final TickHook tickHook;
@@ -83,6 +88,7 @@ public class SparkPlatform {
     private final TickStatistics tickStatistics;
     private final PingStatistics pingStatistics;
     private final PlatformStatisticsProvider statisticsProvider;
+    private final WorldMetricsCollector worldMetricsCollector;
     private final CommandManager commandManager;
     private final AtomicBoolean enabled = new AtomicBoolean(false);
     private Map<String, GarbageCollectorStatistics> startupGcStatistics = ImmutableMap.of();
@@ -113,6 +119,8 @@ public class SparkPlatform {
         this.activityLog = new ActivityLog(plugin.getPluginDirectory().resolve("activity.json"));
         this.activityLog.load();
 
+        this.metrics = new Metrics();
+
         this.samplerContainer = new SamplerContainer();
         this.backgroundSamplerManager = new BackgroundSamplerManager(this, this.configuration);
 
@@ -120,14 +128,15 @@ public class SparkPlatform {
         this.tickHook = plugin.createTickHook();
         this.tickReporter = plugin.createTickReporter();
         if (tickStatistics == null && (this.tickHook != null || this.tickReporter != null)) {
-            tickStatistics = new SparkTickStatistics();
+            tickStatistics = new SparkTickStatistics(this.metrics);
         }
         this.tickStatistics = tickStatistics;
 
         PlayerPingProvider pingProvider = plugin.createPlayerPingProvider();
-        this.pingStatistics = pingProvider != null ? new PingStatistics(pingProvider) : null;
+        this.pingStatistics = pingProvider != null ? new PingStatistics(pingProvider, this.metrics) : null;
 
         this.statisticsProvider = new PlatformStatisticsProvider(this);
+        this.worldMetricsCollector = new WorldMetricsCollector(this);
 
         this.commandManager = new CommandManager(this, this.configuration);
     }
@@ -148,7 +157,12 @@ public class SparkPlatform {
         if (this.pingStatistics != null) {
             this.pingStatistics.start();
         }
+
+        this.worldMetricsCollector.start();
+
         CpuMonitor.ensureMonitoring();
+        MemoryMonitor.ensureMonitoring();
+        MemoryAllocationInfo.ensureMonitoring();
         NetworkMonitor.ensureMonitoring();
 
         // poll startup GC statistics after plugins & the world have loaded
@@ -173,9 +187,13 @@ public class SparkPlatform {
         if (this.tickReporter != null) {
             this.tickReporter.close();
         }
+        if (this.tickStatistics != null) {
+            this.tickStatistics.close();
+        }
         if (this.pingStatistics != null) {
             this.pingStatistics.close();
         }
+        this.worldMetricsCollector.close();
 
         this.samplerContainer.close();
 
@@ -218,6 +236,10 @@ public class SparkPlatform {
 
     public ActivityLog getActivityLog() {
         return this.activityLog;
+    }
+
+    public Metrics getMetrics() {
+        return this.metrics;
     }
 
     public SamplerContainer getSamplerContainer() {
